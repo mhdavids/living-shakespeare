@@ -79,6 +79,11 @@ body {
 .play-soon { font-size: 0.7rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; }
 .list-foot { text-align: center; color: var(--ink-faint); font-size: 0.9rem; margin: 22px auto 0; max-width: 32em; }
 
+/* ── Loading ── */
+.loading-play { padding: calc(20px + env(safe-area-inset-top)) 18px; }
+.loading-note { font-family: var(--serif); font-size: 1.3rem; color: var(--ink-dim); text-align: center; margin-top: 40dvh; }
+.loading-note em { color: var(--gold-soft); }
+
 /* ── Reader ── */
 .reader { display: flex; flex-direction: column; min-height: 100dvh; }
 .reader-top {

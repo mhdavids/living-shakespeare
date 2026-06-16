@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
-import { getPlayText, getModern, playMeta } from '../data/plays'
+import { loadPlay, loadModern, playMeta } from '../data/plays'
 import { computeStaging, titleCase } from '../lib/staging'
 import { Stage } from '../components/Stage'
+import type { PlayText, Translations } from '../types'
 
 export function Reader({ playId, sceneIdx, onScene, onExit }: {
   playId: string
@@ -9,9 +10,37 @@ export function Reader({ playId, sceneIdx, onScene, onExit }: {
   onScene: (i: number) => void
   onExit: () => void
 }) {
-  const play = getPlayText(playId)!
-  const modern = getModern(playId)
   const meta = playMeta(playId)!
+  const [data, setData] = useState<{ play: PlayText; modern: Translations } | null>(null)
+
+  useEffect(() => {
+    let live = true
+    setData(null)
+    Promise.all([loadPlay(playId), loadModern(playId)]).then(([play, modern]) => {
+      if (live) setData({ play, modern })
+    })
+    return () => { live = false }
+  }, [playId])
+
+  if (!data) {
+    return (
+      <div className="loading-play">
+        <button className="link" onClick={onExit}>‹ All plays</button>
+        <p className="loading-note">Raising the curtain on <em>{meta.title}</em>…</p>
+      </div>
+    )
+  }
+  return <ReaderInner play={data.play} modern={data.modern} meta={meta} sceneIdx={sceneIdx} onScene={onScene} onExit={onExit} />
+}
+
+function ReaderInner({ play, modern, meta, sceneIdx, onScene, onExit }: {
+  play: PlayText
+  modern: Translations
+  meta: { title: string }
+  sceneIdx: number
+  onScene: (i: number) => void
+  onExit: () => void
+}) {
   const scene = play.scenes[sceneIdx]
   const frames = useMemo(() => computeStaging(scene, play.characters), [scene, play.characters])
 
@@ -37,7 +66,9 @@ export function Reader({ playId, sceneIdx, onScene, onExit }: {
     }
   }
 
-  const sceneLabel = `Act ${scene.act}, Scene ${scene.scene}`
+  const labelOf = (s: { act: number; scene: number; label?: string }) =>
+    s.label ? titleCase(s.label) : s.act === 0 ? `Scene ${s.scene}` : `Act ${s.act}, Scene ${s.scene}`
+  const sceneLabel = labelOf(scene)
   const hasModernAny = speechUnitIdxs.some(i => modern[`${scene.act}.${scene.scene}.${scene.units[i].i}`])
 
   return (
@@ -92,7 +123,7 @@ export function Reader({ playId, sceneIdx, onScene, onExit }: {
         })}
         <div className="script-end">
           {sceneIdx < play.scenes.length - 1
-            ? <button className="btn" onClick={() => onScene(sceneIdx + 1)}>Next scene · Act {play.scenes[sceneIdx + 1].act}, Scene {play.scenes[sceneIdx + 1].scene} ›</button>
+            ? <button className="btn" onClick={() => onScene(sceneIdx + 1)}>Next · {labelOf(play.scenes[sceneIdx + 1])} ›</button>
             : <p className="muted">End of the play. <button className="link" onClick={onExit}>Back to all plays ›</button></p>}
         </div>
       </div>

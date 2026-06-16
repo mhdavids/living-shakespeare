@@ -14,6 +14,8 @@ export interface Scene {
   act: number
   scene: number
   setting: string
+  /** For non-"Scene N" sections: "Prologue", "Induction", "Epilogue", etc. */
+  label?: string
   units: Unit[]
 }
 

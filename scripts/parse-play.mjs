@@ -51,6 +51,16 @@ for (const raw of lines) {
     scenes.push(cur)
     continue
   }
+  // Prologue / Induction / Epilogue / Chorus etc. — a labelled section, not "SCENE N".
+  if ((m = line.match(/<h3>\s*(.*?)\s*<\/h3>/i))) {
+    const label = decode(m[1])
+    if (label) {
+      cur = { act, scene: 0, setting: '', label, units: [] }
+      curSpeech = null
+      scenes.push(cur)
+    }
+    continue
+  }
   // Speaker heading: <A NAME=speechN><b>NAME</b></a>
   if ((m = line.match(/<A NAME=speech\d+>\s*<b>(.*?)<\/b>/i))) {
     const speaker = decode(m[1])
@@ -78,7 +88,7 @@ for (const s of scenes) {
 
 const out = {
   id: playId,
-  scenes: scenes.map(s => ({ act: s.act, scene: s.scene, setting: s.setting, units: s.units })),
+  scenes: scenes.map(s => ({ act: s.act, scene: s.scene, setting: s.setting, label: s.label, units: s.units })),
   characters: [...characters],
 }
 writeFileSync(outPath, JSON.stringify(out))
